@@ -137,12 +137,25 @@ func parseJSONLD(content string) *models.Recipe {
 	return recipe
 }
 
+func isRecipeType(typ interface{}) bool {
+	switch v := typ.(type) {
+	case string:
+		return v == "Recipe"
+	case []interface{}:
+		for _, item := range v {
+			if s, ok := item.(string); ok && s == "Recipe" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func findRecipeObject(v interface{}) interface{} {
 	switch val := v.(type) {
 	case map[string]interface{}:
 		if typ, ok := val["@type"]; ok {
-			typeStr := fmt.Sprintf("%v", typ)
-			if typeStr == "Recipe" {
+			if isRecipeType(typ) {
 				return val
 			}
 		}
