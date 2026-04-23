@@ -7,20 +7,17 @@ import (
 	"strings"
 	"time"
 
-	"tangled.org/dunkirk.sh/pare/internal/extract/ai"
 	"tangled.org/dunkirk.sh/pare/internal/extract/hrecipe"
 	"tangled.org/dunkirk.sh/pare/internal/extract/schema"
 	"tangled.org/dunkirk.sh/pare/internal/models"
 )
 
 type Pipeline struct {
-	aiExtractor *ai.Extractor
-	client      *http.Client
+	client *http.Client
 }
 
-func NewPipeline(aiExtractor *ai.Extractor) *Pipeline {
+func NewPipeline() *Pipeline {
 	return &Pipeline{
-		aiExtractor: aiExtractor,
 		client: &http.Client{
 			Timeout: 15 * time.Second,
 		},
@@ -50,17 +47,7 @@ func (p *Pipeline) Extract(targetURL string) *Result {
 		return &Result{Recipe: recipe}
 	}
 
-	if p.aiExtractor != nil {
-		pageText := stripHTML(body)
-		recipe, err := p.aiExtractor.Extract(pageText, targetURL)
-		if err == nil && recipe != nil {
-			recipe.SourceURL = targetURL
-			recipe.SourceDomain = domainOf(targetURL)
-			return &Result{Recipe: recipe}
-		}
-	}
-
-	return &Result{Error: fmt.Errorf("no recipe found on page — tried JSON-LD, h-recipe, and AI extraction")}
+	return &Result{Error: fmt.Errorf("no recipe found on page — tried JSON-LD and h-recipe extraction")}
 }
 
 func (p *Pipeline) fetch(url string) (string, error) {
@@ -97,24 +84,4 @@ func domainOf(url string) string {
 	}
 	host := strings.Split(parts[1], "/")[0]
 	return host
-}
-
-func stripHTML(body string) string {
-	var sb strings.Builder
-	inTag := false
-	for _, r := range body {
-		if r == '<' {
-			inTag = true
-			continue
-		}
-		if r == '>' {
-			inTag = false
-			sb.WriteRune(' ')
-			continue
-		}
-		if !inTag {
-			sb.WriteRune(r)
-		}
-	}
-	return sb.String()
 }

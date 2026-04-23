@@ -61,8 +61,12 @@ func Export(recipe *models.Recipe) string {
 }
 
 var timeRe = regexp.MustCompile(`(?i)\b(\d+)\s*(seconds?|minutes?|mins?|hours?|hrs?|h)\b`)
-var cookwareRe = regexp.MustCompile(`(?i)\b(a|the)\s+(large|small|medium|big|heavy|deep|shallow|cast-iron|nonstick)\s+([\w-]+(?:\s+[\w-]+)?)\b`)
-var bareCookwareRe = regexp.MustCompile(`(?i)\b(saucepan|skillet|frying pan|baking sheet|baking dish|roasting pan|stockpot|dutch oven|slow cooker|instant pot|air fryer|pressure cooker|food processor|stand mixer|hand mixer|blender|grill|oven|stove|microwave|pot|pan|wok|bowl|whisk|spatula|tongs|colander|strainer|sieve|rolling pin|cutting board|knife|peeler|grater|mandoline|thermometer)\b`)
+
+func AnnotateStepForDisplay(text string, ingredients []models.Ingredient) string {
+	index := buildIngredientIndex(ingredients)
+	annotated, _ := annotateStep(text, index)
+	return annotated
+}
 
 func annotateStep(text string, ingredients map[string]models.Ingredient) (string, map[string]bool) {
 	annotated := text
@@ -122,23 +126,6 @@ func annotateStep(text string, ingredients map[string]models.Ingredient) (string
 			return fmt.Sprintf("~{%s%%%s}", qty, unit)
 		}
 		return matchStr
-	})
-
-	annotated = cookwareRe.ReplaceAllStringFunc(annotated, func(matchStr string) string {
-		parts := cookwareRe.FindStringSubmatch(matchStr)
-		if len(parts) >= 4 {
-			ware := parts[2] + " " + parts[3]
-			return fmt.Sprintf("#%s{}", ware)
-		}
-		return matchStr
-	})
-
-	annotated = bareCookwareRe.ReplaceAllStringFunc(annotated, func(matchStr string) string {
-		ware := strings.ToLower(matchStr)
-		if strings.Contains(ware, " ") {
-			return fmt.Sprintf("#%s{}", ware)
-		}
-		return fmt.Sprintf("#%s", ware)
 	})
 
 	return annotated, matched

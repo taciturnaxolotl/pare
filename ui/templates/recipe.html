@@ -5,6 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>pare - {{.Recipe.Name}}</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -13,14 +14,17 @@
   </nav>
   <div class="page">
 {{if .Recipe.ImageURL}}
-<img class="recipe-image" src="{{.Recipe.ImageURL}}" alt="{{.Recipe.Name}}" referrerpolicy="no-referrer">
+<figure class="recipe-image-wrapper">
+  <img class="recipe-image" src="{{.Recipe.ImageURL}}" alt="{{.Recipe.Name}}" referrerpolicy="no-referrer">
+  <figcaption class="recipe-source"><a href="{{.Recipe.SourceURL}}" target="_blank" rel="noopener">{{with cleanSource .Recipe.SourceURL}}{{.host}}{{if .path}}<span class="source-path">{{.path}}</span>{{end}}{{end}}</a></figcaption>
+</figure>
 {{end}}
 
 <div class="recipe-header">
   <h2>{{.Recipe.Name}}</h2>
   <div class="recipe-meta">
-    {{if .Recipe.PrepTime}}<span>&#9201; {{fmtDuration .Recipe.PrepTime}} prep</span>{{end}}
-    {{if .Recipe.CookTime}}<span>&#9201; {{fmtDuration .Recipe.CookTime}} cook</span>{{end}}
+    {{if .Recipe.PrepTime}}<span class="timer-trigger" data-seconds="{{isoToSeconds .Recipe.PrepTime}}" data-label="Prep">&#9201; {{fmtDuration .Recipe.PrepTime}} prep</span>{{end}}
+    {{if .Recipe.CookTime}}<span class="timer-trigger" data-seconds="{{isoToSeconds .Recipe.CookTime}}" data-label="Cook">&#9201; {{fmtDuration .Recipe.CookTime}} cook</span>{{end}}
     {{if .Recipe.Yield}}<span>Serves {{.Recipe.Yield}}</span>{{end}}
   </div>
   {{if .Recipe.Description}}<p class="description">{{.Recipe.Description}}</p>{{end}}
@@ -45,7 +49,7 @@
   <h3>Instructions</h3>
   <ol class="instruction-list">
     {{range .Recipe.Instructions}}
-    <li>{{.Text}}</li>
+    <li>{{renderStep .Text $.Recipe.Ingredients}}</li>
     {{end}}
   </ol>
 </div>
@@ -53,7 +57,17 @@
 
 <div class="actions">
   <a class="btn-primary" href="/export.cook?url={{.TargetURL | urlquery}}">Download .cook</a>
-  <a class="btn-secondary" href="{{.Recipe.SourceURL}}" target="_blank" rel="noopener">{{.Recipe.SourceDomain}} &#8599;</a>
+</div>
+
+<div id="timer-widget" class="timer-widget hidden">
+  <button class="timer-close" onclick="closeTimer()">&times;</button>
+  <div class="timer-label" id="timer-label"></div>
+  <div class="timer-display" id="timer-display">00:00</div>
+  <div class="timer-controls">
+    <button class="timer-btn" id="timer-start" onclick="startTimer()">Start</button>
+    <button class="timer-btn" id="timer-pause" onclick="pauseTimer()" style="display:none">Pause</button>
+    <button class="timer-btn" id="timer-reset" onclick="resetTimer()">Reset</button>
+  </div>
 </div>
 
 <script>
@@ -86,11 +100,101 @@ function loadChecks() {
 }
 
 loadChecks();
+
+// Timer
+let timerInterval = null;
+let timerRemaining = 0;
+let timerRunning = false;
+
+document.querySelectorAll('.timer-trigger').forEach(el => {
+  el.addEventListener('click', () => {
+    const secs = parseInt(el.dataset.seconds, 10);
+    const label = el.dataset.label;
+    if (secs > 0) {
+      openTimer(secs, label);
+    }
+  });
+});
+
+function openTimer(secs, label) {
+  timerRemaining = secs;
+  timerRunning = false;
+  clearInterval(timerInterval);
+  timerInterval = null;
+  document.getElementById('timer-label').textContent = label;
+  updateTimerDisplay();
+  document.getElementById('timer-start').style.display = '';
+  document.getElementById('timer-pause').style.display = 'none';
+  document.getElementById('timer-widget').classList.remove('hidden');
+}
+
+function startTimer() {
+  if (timerRunning) return;
+  timerRunning = true;
+  document.getElementById('timer-start').style.display = 'none';
+  document.getElementById('timer-pause').style.display = '';
+  timerInterval = setInterval(() => {
+    timerRemaining--;
+    updateTimerDisplay();
+    if (timerRemaining <= 0) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      timerRunning = false;
+      document.getElementById('timer-display').classList.add('timer-done');
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('Timer done!', { body: document.getElementById('timer-label').textContent + ' is done!' });
+      }
+    }
+  }, 1000);
+}
+
+function pauseTimer() {
+  timerRunning = false;
+  clearInterval(timerInterval);
+  timerInterval = null;
+  document.getElementById('timer-start').style.display = '';
+  document.getElementById('timer-pause').style.display = 'none';
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerRunning = false;
+  const triggers = document.querySelectorAll('.timer-trigger');
+  if (triggers.length > 0) {
+    const active = [...triggers].find(t => t.dataset.label === document.getElementById('timer-label').textContent);
+    if (active) {
+      timerRemaining = parseInt(active.dataset.seconds, 10);
+    }
+  }
+  document.getElementById('timer-start').style.display = '';
+  document.getElementById('timer-pause').style.display = 'none';
+  document.getElementById('timer-display').classList.remove('timer-done');
+  updateTimerDisplay();
+}
+
+function closeTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerRunning = false;
+  document.getElementById('timer-widget').classList.add('hidden');
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(timerRemaining / 60);
+  const s = timerRemaining % 60;
+  document.getElementById('timer-display').textContent =
+    String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+}
+
+if ('Notification' in window && Notification.permission === 'default') {
+  Notification.requestPermission();
+}
 </script>
   </div>
   <footer>
-    <span>made by <a href="https://dunkirk.sh">Kieran Klukas</a></span>
-    <a href="https://tangled.org/dunkirk.sh/pare/commit/{{.GitHash}}" class="commit-link">{{.GitHash}}</a>
+    <span>made by <a href="https://dunkirk.sh" target="_blank" rel="noopener">Kieran Klukas</a></span>
+    <a href="https://tangled.org/dunkirk.sh/pare/commit/{{.GitHash}}" target="_blank" rel="noopener" class="commit-link">{{.GitHash}}</a>
   </footer>
 </body>
 </html>

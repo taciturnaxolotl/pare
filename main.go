@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
+	"strconv"
 	"strings"
 	"io/fs"
 
@@ -17,7 +17,6 @@ import (
 	"tangled.org/dunkirk.sh/pare/internal/cache"
 	"tangled.org/dunkirk.sh/pare/internal/cooklang"
 	"tangled.org/dunkirk.sh/pare/internal/extract"
-	"tangled.org/dunkirk.sh/pare/internal/extract/ai"
 	"tangled.org/dunkirk.sh/pare/internal/models"
 	"tangled.org/dunkirk.sh/pare/ui"
 )
@@ -27,7 +26,6 @@ var gitHash = "dev"
 func main() {
 	port := flag.Int("port", 3000, "port to listen on")
 	dbPath := flag.String("db", "pare.db", "path to SQLite database")
-	apiKey := flag.String("ai-key", os.Getenv("ANTHROPIC_API_KEY"), "Anthropic API key for AI extraction")
 	baseURL := flag.String("base-url", "", "base URL of this service")
 	flag.Parse()
 
@@ -41,20 +39,18 @@ func main() {
 	}
 	defer c.Close()
 
-	var aiExtractor *ai.Extractor
-	if *apiKey != "" {
-		aiExtractor = ai.NewExtractor(*apiKey, "", "")
-	}
-
 	tmpl, err := template.New("").Funcs(template.FuncMap{
 		"fmtDuration": fmtDuration,
+		"isoToSeconds": isoToSeconds,
+		"cleanSource": cleanSource,
+		"renderStep":  renderStep,
 	}).ParseFS(ui.Templates, "templates/*.html")
 	if err != nil {
 		log.Fatalf("parsing templates: %v", err)
 	}
 
 	srv := &Server{
-		pipeline:  extract.NewPipeline(aiExtractor),
+		pipeline:  extract.NewPipeline(),
 		cache:     c,
 		templates: tmpl,
 		baseURL:   *baseURL,
@@ -200,6 +196,45 @@ func fmtDuration(iso string) string {
 	return strings.Join(parts, " ")
 }
 
+func isoToSeconds(iso string) int {
+	if !strings.HasPrefix(iso, "PT") {
+		return 0
+	}
+	d := strings.TrimPrefix(iso, "PT")
+	secs := 0
+	if h := before(d, "H"); h != "" {
+		if v, err := strconv.Atoi(h); err == nil {
+			secs += v * 3600
+		}
+		d = after(d, "H")
+	}
+	if m := before(d, "M"); m != "" {
+		if v, err := strconv.Atoi(m); err == nil {
+			secs += v * 60
+		}
+		d = after(d, "M")
+	}
+	if s := before(d, "S"); s != "" {
+		if v, err := strconv.Atoi(s); err == nil {
+			secs += v
+		}
+	}
+	return secs
+}
+
+func cleanSource(rawURL string) map[string]string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return map[string]string{"host": rawURL, "path": ""}
+	}
+	host := strings.TrimPrefix(u.Host, "www.")
+	path := u.Path
+	if path == "/" {
+		path = ""
+	}
+	return map[string]string{"host": host, "path": path}
+}
+
 func before(s, sep string) string {
 	i := strings.Index(s, sep)
 	if i < 0 {
@@ -214,6 +249,11 @@ func after(s, sep string) string {
 		return s
 	}
 	return s[i+len(sep):]
+}
+
+func renderStep(text string, ingredients []models.Ingredient) template.HTML {
+	annotated := cooklang.AnnotateStepForDisplay(text, ingredients)
+	return template.HTML(cooklang.RenderStepHTML(annotated))
 }
 
 func recipeToJSONLD(r *models.Recipe) map[string]interface{} {
