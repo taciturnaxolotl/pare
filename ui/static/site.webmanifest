@@ -1,0 +1,11 @@
+{
+  "name": "pear",
+  "short_name": "pear",
+  "icons": [
+    { "src": "/static/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/static/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "theme_color": "#e85d04",
+  "background_color": "#faf9f7",
+  "display": "standalone"
+}
