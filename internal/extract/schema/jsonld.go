@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"tangled.org/dunkirk.sh/pare/internal/models"
@@ -25,9 +26,12 @@ func Extract(body string) (*models.Recipe, bool) {
 			if recipe.Description == "" {
 				recipe.Description = findMetaDescription(doc)
 			}
+			if ogImg := findMetaImage(doc); ogImg != "" {
+				recipe.ImageURL = ogImg
+			}
 			if recipe.ImageURL == "" || looksSmall(recipe.ImageURL) {
-				if ogImg := findMetaImage(doc); ogImg != "" {
-					recipe.ImageURL = ogImg
+				if largeImg := findLargestImage(doc); largeImg != "" {
+					recipe.ImageURL = largeImg
 				}
 			}
 			return recipe, true
@@ -258,6 +262,70 @@ func findMetaImage(n *html.Node) string {
 	}
 	f(n)
 	return result
+}
+
+type imgCandidate struct {
+	src    string
+	width  int
+	height int
+}
+
+func findLargestImage(n *html.Node) string {
+	var candidates []imgCandidate
+	var f func(*html.Node)
+	f = func(n *html.Node) {
+		if n.Type == html.ElementNode && n.Data == "img" {
+			var src, dataSrc string
+			var w, h int
+			for _, a := range n.Attr {
+				switch a.Key {
+				case "src":
+					src = a.Val
+				case "data-lazy-src", "data-src":
+					dataSrc = a.Val
+				case "width":
+					w, _ = strconv.Atoi(a.Val)
+				case "height":
+					h, _ = strconv.Atoi(a.Val)
+				}
+			}
+			u := dataSrc
+			if u == "" {
+				u = src
+			}
+			if u == "" || strings.HasPrefix(u, "data:") {
+				return
+			}
+			candidates = append(candidates, imgCandidate{src: u, width: w, height: h})
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			f(c)
+		}
+	}
+	f(n)
+	if len(candidates) == 0 {
+		return ""
+	}
+	// Pick the largest by area (width * height), preferring ones with explicit dimensions
+	best := candidates[0]
+	bestArea := best.width * best.height
+	for _, c := range candidates[1:] {
+		area := c.width * c.height
+		if area > bestArea {
+			best = c
+			bestArea = area
+		}
+	}
+	// If no candidate had dimensions, pick the first non-small URL
+	if bestArea == 0 {
+		for _, c := range candidates {
+			if !looksSmall(c.src) {
+				return c.src
+			}
+		}
+		return candidates[0].src
+	}
+	return best.src
 }
 
 func extractIngredients(m map[string]interface{}) []models.Ingredient {
