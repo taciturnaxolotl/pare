@@ -1,0 +1,57 @@
+{{define "userscript_page"}}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>pear: userscript</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+  <link rel="manifest" href="/static/site.webmanifest">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+  <nav>
+    <a href="/" class="wordmark">pear</a>
+  </nav>
+  <div class="page">
+    <div class="userscript-install">
+      <h2>userscript</h2>
+      <p class="userscript-desc">auto-detect recipes on any site and provides a link to send you back here.</p>
+
+      <a href="/static/pear.user.js" class="btn-primary install-btn">install userscript</a>
+
+      <div class="userscript-section">
+        <h3>how do I install a userscript?</h3>
+        <div class="userscript-managers">
+          <a href="https://www.tampermonkey.net/" target="_blank" rel="noopener" class="manager-card">
+            <strong>Tampermonkey</strong>
+            <span>Chrome, Firefox, Safari, Edge</span>
+          </a>
+          <a href="https://violentmonkey.github.io/" target="_blank" rel="noopener" class="manager-card">
+            <strong>Violentmonkey</strong>
+            <span>Chrome, Firefox, Edge</span>
+          </a>
+        </div>
+        <p>install one of these userscript managers, then click the button above.</p>
+      </div>
+
+      <div class="userscript-section">
+        <h3>what it does</h3>
+        <p>when you're on a recipe site, it checks for recipe data and shows a bar to redirect you to pear.</p>
+      </div>
+    </div>
+  </div>
+  <footer>
+    <span>made by <a href="https://dunkirk.sh" target="_blank" rel="noopener">Kieran Klukas</a></span>
+    <a href="https://tangled.org/dunkirk.sh/pear/commit/{{.GitHash}}" target="_blank" rel="noopener"
+      class="commit-link">{{.GitHash}}</a>
+  </footer>
+</body>
+
+</html>
+{{end}}

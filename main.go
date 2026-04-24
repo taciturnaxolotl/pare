@@ -86,6 +86,7 @@ func main() {
 	r.Get("/cook", srv.handleCookView)
 	r.Get("/export.cook", srv.handleCookExport)
 	r.Get("/recipe", srv.handleRecipeQuery)
+	r.Get("/userscript", srv.handleUserscript)
 	r.Get("/status", srv.handleStatus)
 	r.Get("/*", srv.handleRecipePath)
 	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.FS(staticContent))))
@@ -254,6 +255,15 @@ func (s *Server) startExtraction(targetURL string) {
 		delete(s.pending, targetURL)
 		s.pendingMu.Unlock()
 	}()
+}
+
+func (s *Server) handleUserscript(w http.ResponseWriter, r *http.Request) {
+	data := map[string]interface{}{
+		"GitHash": s.gitHash,
+		"BaseURL": s.baseURL,
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	s.templates.ExecuteTemplate(w, "userscript_page", data)
 }
 
 func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {

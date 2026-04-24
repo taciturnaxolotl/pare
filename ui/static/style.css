@@ -560,3 +560,71 @@ footer a:hover{color:var(--accent)}
   font-family:'Poppins',system-ui,sans-serif;
 }
 .recent-card:hover .recent-card-name{color:var(--accent)}
+
+.userscript-install{padding:2.5rem 0 1rem;text-align:center}
+.userscript-install h2{
+  font-family:'Poppins',system-ui,sans-serif;
+  font-size:2rem;
+  font-weight:700;
+  letter-spacing:-0.02em;
+  margin-bottom:0.5rem;
+}
+.userscript-desc{color:var(--text-muted);font-size:1.05rem;margin-bottom:2rem}
+.install-btn{
+  display:inline-block;
+  padding:0.85rem 2rem;
+  border-radius:var(--radius);
+  background:var(--accent);
+  color:#fff;
+  border:none;
+  font-size:1.1rem;
+  font-family:'Poppins',system-ui,sans-serif;
+  font-weight:600;
+  cursor:pointer;
+  text-decoration:none;
+  transition:background 0.2s;
+  margin-bottom:2.5rem;
+}
+.install-btn:hover{background:var(--accent-hover);text-decoration:none}
+.userscript-section{
+  text-align:left;
+  max-width:540px;
+  margin:0 auto 2rem;
+}
+.userscript-section h3{
+  font-size:0.85rem;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  color:var(--text-muted);
+  border-bottom:2px solid var(--border);
+  padding-bottom:0.35rem;
+  margin-bottom:0.75rem;
+  font-family:'Poppins',system-ui,sans-serif;
+}
+.userscript-section p{font-size:0.95rem;color:var(--text-muted);line-height:1.6}
+.userscript-section ol{margin:0.5rem 0;padding-left:1.5rem;color:var(--text-muted);font-size:0.95rem;line-height:1.8}
+.userscript-section li{margin-bottom:0.25rem}
+.userscript-managers{
+  display:flex;
+  gap:0.75rem;
+  margin:0.75rem 0 1rem;
+}
+.manager-card{
+  display:flex;
+  flex-direction:column;
+  gap:0.15rem;
+  padding:0.75rem 1rem;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  text-decoration:none;
+  transition:border-color 0.2s,box-shadow 0.2s;
+  flex:1;
+}
+.manager-card:hover{border-color:var(--accent);text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.manager-card strong{color:var(--text);font-family:'Poppins',system-ui,sans-serif;font-size:0.9rem}
+.manager-card span{color:var(--text-muted);font-size:0.8rem}
+
+@media(max-width:600px){
+  .userscript-install h2{font-size:1.5rem}
+  .userscript-managers{flex-direction:column}
+}
