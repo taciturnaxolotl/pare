@@ -7,3 +7,5 @@ pear
 .DS_Store
 build-errors.log
 pear.db*
+.direnv
+.envrc
