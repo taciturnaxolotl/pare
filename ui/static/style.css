@@ -10,6 +10,7 @@
   --accent-hover:#c44e03;
   --border:#e0ddd8;
   --check-bg:#f0ede8;
+  --btn-hover:#f6f6f6;
   --error-bg:#fef2f2;
   --error-text:#991b1b;
   --ai-badge:#7c3aed;
@@ -296,11 +297,11 @@ footer a:hover{color:var(--accent)}
   background:var(--accent);
   color:#fff;
 }
-.timer-btn:active{transform:scale(0.96)}
+.timer-btn:hover{background:var(--btn-hover)}
 
 .tmr{font-weight:500;cursor:pointer;transition:color 0.2s;white-space:nowrap}
 .tmr:hover{color:var(--accent)}
-.tmr::before{content:"⏲";font-size:0.8em;margin-right:0.4em}
+.tmr::before{content:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='10' x2='14' y1='2' y2='2'/%3E%3Cline x1='12' x2='15' y1='14' y2='11'/%3E%3Ccircle cx='12' cy='14' r='8'/%3E%3C/svg%3E");margin-right:0.4em;vertical-align:middle}
 
 .cook-link{
   font-family:'SF Mono','Fira Code','Cascadia Code',monospace;
@@ -343,6 +344,8 @@ footer a:hover{color:var(--accent)}
   transition:color 0.15s;
 }
 .meta-link:hover{color:var(--text-muted);text-decoration:underline}
+
+.meta-icon{vertical-align:-2px;margin-right:0.15em}
 
 .flagged-header{margin-bottom:1.5rem}
 .flagged-header h2{font-size:1.5rem;font-weight:600;font-family:'Poppins',system-ui,sans-serif}

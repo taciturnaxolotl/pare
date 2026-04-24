@@ -36,8 +36,8 @@
 <div class="recipe-header">
   <h2>{{.Recipe.Name}}</h2>
   <div class="recipe-meta">
-    {{if .Recipe.PrepTime}}<span>⏱ {{fmtDuration .Recipe.PrepTime}} prep</span>{{end}}
-    {{if .Recipe.CookTime}}<span>⏱ {{fmtDuration .Recipe.CookTime}} cook</span>{{end}}
+    {{if .Recipe.PrepTime}}<span><svg class="meta-icon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> {{fmtDuration .Recipe.PrepTime}} prep</span>{{end}}
+    {{if .Recipe.CookTime}}<span><svg class="meta-icon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> {{fmtDuration .Recipe.CookTime}} cook</span>{{end}}
     {{if .Recipe.Yield}}<span>Serves {{.Recipe.Yield}}</span>{{end}}
     <a href="/cook?url={{.TargetURL | urlquery}}" class="cook-link">.cook</a>
     <a href="/flag?url={{.TargetURL | urlquery}}" class="flag-link{{if .IsFlagged}} flagged{{end}}" title="Flag as problematic – saves recipe for review"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/></svg></a>
