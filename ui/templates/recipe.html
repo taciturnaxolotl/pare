@@ -35,7 +35,7 @@
     {{if .Recipe.PrepTime}}<span>⏱ {{fmtDuration .Recipe.PrepTime}} prep</span>{{end}}
     {{if .Recipe.CookTime}}<span>⏱ {{fmtDuration .Recipe.CookTime}} cook</span>{{end}}
     {{if .Recipe.Yield}}<span>Serves {{.Recipe.Yield}}</span>{{end}}
-    <a href="/export.cook?url={{.TargetURL | urlquery}}" class="cook-link" download>.cook</a>
+    <a href="/cook?url={{.TargetURL | urlquery}}" class="cook-link">.cook</a>
   </div>
   {{if .Recipe.Description}}<p class="description">{{.Recipe.Description}}</p>{{end}}
 </div>
