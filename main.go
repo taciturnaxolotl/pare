@@ -119,6 +119,13 @@ type extractResult struct {
 	err    error
 }
 
+type indexRecentRecipe struct {
+	Name      string
+	ImageURL  string
+	SourceURL string
+	Domain    string
+}
+
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	targetURL := r.URL.Query().Get("url")
 	if targetURL != "" {
@@ -130,7 +137,31 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/"+targetURL, http.StatusFound)
 		return
 	}
-	s.templates.ExecuteTemplate(w, "index_page", map[string]string{"GitHash": s.gitHash, "BaseURL": s.baseURL})
+
+	var recentRecipes []indexRecentRecipe
+	cached, err := s.cache.Recent(6)
+	if err != nil {
+		log.Printf("cache recent error: %v", err)
+	}
+	for _, cr := range cached {
+		var recipe models.Recipe
+		if err := json.Unmarshal(cr.Recipe, &recipe); err != nil {
+			continue
+		}
+		recentRecipes = append(recentRecipes, indexRecentRecipe{
+			Name:      recipe.Name,
+			ImageURL:  recipe.ImageURL,
+			SourceURL: cr.URL,
+			Domain:    recipe.SourceDomain,
+		})
+	}
+
+	data := map[string]interface{}{
+		"GitHash":  s.gitHash,
+		"BaseURL":  s.baseURL,
+		"Recent":   recentRecipes,
+	}
+	s.templates.ExecuteTemplate(w, "index_page", data)
 }
 
 func (s *Server) handleRecipeQuery(w http.ResponseWriter, r *http.Request) {

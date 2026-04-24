@@ -84,6 +84,27 @@ func (c *Cache) Set(url string, recipe *models.Recipe) error {
 	return err
 }
 
+func (c *Cache) Recent(limit int) ([]models.CachedRecipe, error) {
+	rows, err := c.db.Query(
+		"SELECT url, recipe, extraction_method, fetched_at FROM recipes ORDER BY fetched_at DESC LIMIT ?",
+		limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.CachedRecipe
+	for rows.Next() {
+		var cr models.CachedRecipe
+		if err := rows.Scan(&cr.URL, &cr.Recipe, &cr.ExtractionMethod, &cr.FetchedAt); err != nil {
+			return nil, err
+		}
+		results = append(results, cr)
+	}
+	return results, rows.Err()
+}
+
 func (c *Cache) Close() error {
 	return c.db.Close()
 }

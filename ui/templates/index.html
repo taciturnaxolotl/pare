@@ -29,6 +29,22 @@
         </form>
       </div>
     </div>
+    {{if .Recent}}
+    <div class="recent-recipes">
+      <h3>recently peared</h3>
+      <div class="recent-grid">
+        {{range .Recent}}
+        <a href="/{{trimProto .SourceURL}}" class="recent-card">
+          {{if .ImageURL}}<img src="{{.ImageURL}}" alt="{{.Name}}" loading="lazy">{{end}}
+          <div class="recent-card-body">
+            <span class="recent-card-name">{{.Name}}</span>
+            <span class="recent-card-domain">{{.Domain}}</span>
+          </div>
+        </a>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
   </div>
   <footer>
     <span>made by <a href="https://dunkirk.sh" target="_blank" rel="noopener">Kieran Klukas</a></span>

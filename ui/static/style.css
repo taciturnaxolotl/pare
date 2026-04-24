@@ -484,3 +484,61 @@ footer a:hover{color:var(--accent)}
 .cook-code .ck-tmr{color:#dcdcaa}
 .cook-code .ck-qty{color:#b5cea8}
 .cook-code .ck-unit{color:#ce9178}
+
+.recent-recipes{margin-top:3rem}
+.recent-recipes h3{
+  font-size:0.85rem;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  color:var(--text-muted);
+  border-bottom:2px solid var(--border);
+  padding-bottom:0.35rem;
+  margin-bottom:0.75rem;
+  font-family:'Poppins',system-ui,sans-serif;
+}
+.recent-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:1rem;
+}
+.recent-card{
+  display:block;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+  text-decoration:none;
+  color:var(--text);
+  transition:border-color 0.2s,box-shadow 0.2s;
+  background:var(--surface);
+}
+.recent-card:hover{
+  border-color:var(--accent);
+  box-shadow:0 2px 8px rgba(0,0,0,0.06);
+  text-decoration:none;
+}
+.recent-card img{
+  width:100%;
+  height:130px;
+  object-fit:cover;
+}
+.recent-card-body{
+  padding:0.65rem 0.75rem;
+  display:flex;
+  flex-direction:column;
+  gap:0.15rem;
+}
+.recent-card-name{
+  font-size:0.9rem;
+  font-weight:500;
+  line-height:1.3;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.recent-card-domain{
+  font-size:0.75rem;
+  color:var(--text-muted);
+  font-family:'Poppins',system-ui,sans-serif;
+}
+.recent-card:hover .recent-card-name{color:var(--accent)}
