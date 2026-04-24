@@ -25,8 +25,11 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - name: Install cross-compiler
+        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
+
       - name: Build
-        run: GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "-X main.gitHash=$(git rev-parse --short HEAD)" -o pear .
+        run: GOOS=linux GOARCH=arm64 CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc go build -ldflags "-X main.gitHash=$(git rev-parse --short HEAD)" -o pear .
 
       - name: Setup Tailscale
         uses: tailscale/github-action@v4
@@ -42,25 +45,110 @@ jobs:
           echo "StrictHostKeyChecking accept-new" >> ~/.ssh/config
 
       - name: Deploy
+        id: deploy
         run: |
+          C="\033[36m" G="\033[32m" Y="\033[33m" D="\033[2m" R="\033[0m"
+          echo "start=$(date +%s)" >> "$GITHUB_OUTPUT"
+          PREV_SHORT=$(ssh pear@terebithia "cd ~/app && git rev-parse --short HEAD")
+          PREV_FULL=$(ssh pear@terebithia "cd ~/app && git rev-parse HEAD")
+
+          echo "prev_short=$PREV_SHORT" >> "$GITHUB_OUTPUT"
+          echo "prev_full=$PREV_FULL" >> "$GITHUB_OUTPUT"
+
+          echo -e "${C}:: pear${R} ${D}${PREV_SHORT}${R}"
+
+          # Snapshot DB before deploy
+          ssh pear@terebithia "cp /var/lib/pear/data/pear.db /var/lib/pear/data/pear.db.pre-deploy 2>/dev/null || true"
+
+          # Pull latest code
+          ssh pear@terebithia << 'PULL'
+            set -e
+            cd ~/app
+            git fetch --all --quiet
+            git reset --hard origin/main --quiet
+          PULL
+
+          NEW_SHORT=$(ssh pear@terebithia "cd ~/app && git rev-parse --short HEAD")
+          NEW_FULL=$(ssh pear@terebithia "cd ~/app && git rev-parse HEAD")
+          echo "new_short=$NEW_SHORT" >> "$GITHUB_OUTPUT"
+          echo "new_full=$NEW_FULL" >> "$GITHUB_OUTPUT"
+
+          echo -e "${C}:: pear${R} ${D}${PREV_SHORT} → ${NEW_SHORT}${R}"
+
+          # Upload binary and restart
+          echo "::group::upload & restart"
           scp pear pear@terebithia:~/app/pear-new
-          ssh pear@terebithia << 'DEPLOY'
+          ssh pear@terebithia << 'INSTALL'
             set -e
             cd ~/app
             chmod +x pear-new
             mv -f pear-new pear
             sudo /run/current-system/sw/bin/systemctl restart pear.service
-          DEPLOY
+          INSTALL
+          echo "::endgroup::"
+
+          echo -e "${G}:: deployed pear${R}"
 
       - name: Health check
+        id: health
         run: |
           for i in $(seq 1 12); do
             if curl -sf -o /dev/null "https://pear.dunkirk.sh"; then
-              echo "Healthy"
+              echo "status=healthy" >> "$GITHUB_OUTPUT"
               exit 0
             fi
             echo "Attempt $i/12 failed"
             sleep 5
           done
-          echo "Health check failed"
+          echo "status=failed" >> "$GITHUB_OUTPUT"
           exit 1
+
+      - name: Summary
+        if: always()
+        run: |
+          DURATION="$(($(date +%s) - ${{ steps.deploy.outputs.start }}))s"
+          PREV_SHORT="${{ steps.deploy.outputs.prev_short }}"
+          PREV_FULL="${{ steps.deploy.outputs.prev_full }}"
+          NEW_SHORT="${{ steps.deploy.outputs.new_short }}"
+          NEW_FULL="${{ steps.deploy.outputs.new_full }}"
+          HEALTH="${{ steps.health.outputs.status }}"
+          REPO="https://github.com/${{ github.repository }}"
+
+          if [ "${{ job.status }}" = "success" ]; then STATUS="Deployed"; else STATUS="Failed"; fi
+
+          cat >> "$GITHUB_STEP_SUMMARY" << EOF
+          | status | commits | health |
+          |---|---|---|
+          | \`${STATUS}\` in \`${DURATION}\` | [\`${PREV_SHORT}\`](${REPO}/commit/${PREV_FULL}) → [\`${NEW_SHORT}\`](${REPO}/commit/${NEW_FULL}) | \`${HEALTH:-skipped}\` |
+          EOF
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "::warning::Deploy failed — rolling back pear"
+
+          ssh pear@terebithia << 'ROLLBACK'
+            set -e
+            RED="\033[31m" Y="\033[33m" G="\033[32m" D="\033[2m" R="\033[0m"
+            cd ~/app
+
+            PREV=$(cat /tmp/pear-prev-commit 2>/dev/null || echo "")
+            if [ -n "$PREV" ]; then
+              SHORT=$(echo "$PREV" | cut -c1-7)
+              echo -e "${Y}:: rolling back to ${SHORT}${R}"
+              sudo /run/current-system/sw/bin/systemctl stop pear.service || true
+
+              if [ -f /var/lib/pear/data/pear.db.pre-deploy ]; then
+                echo -e "${Y}:: restoring database snapshot${R}"
+                cp /var/lib/pear/data/pear.db.pre-deploy /var/lib/pear/data/pear.db
+              fi
+
+              git reset --hard "$PREV" --quiet
+              CGO_ENABLED=1 go build -ldflags "-X main.gitHash=$(git rev-parse --short HEAD)" -o pear .
+              sudo /run/current-system/sw/bin/systemctl restart pear.service
+              echo -e "${G}:: rolled back to ${SHORT}${R}"
+            else
+              echo -e "${RED}:: no previous commit recorded, cannot rollback${R}"
+              exit 1
+            fi
+          ROLLBACK
