@@ -25,6 +25,11 @@ func Extract(body string) (*models.Recipe, bool) {
 			if recipe.Description == "" {
 				recipe.Description = findMetaDescription(doc)
 			}
+			if recipe.ImageURL == "" || looksSmall(recipe.ImageURL) {
+				if ogImg := findMetaImage(doc); ogImg != "" {
+					recipe.ImageURL = ogImg
+				}
+			}
 			return recipe, true
 		}
 	}
@@ -179,23 +184,80 @@ func findRecipeObject(v interface{}) interface{} {
 }
 
 func extractImage(m map[string]interface{}) string {
-	img := m["image"]
+	var urls []string
+	collectImageURLs(m["image"], &urls)
+	if best := pickBestImage(urls); best != "" {
+		return best
+	}
+	return ""
+}
+
+func collectImageURLs(img interface{}, urls *[]string) {
 	switch v := img.(type) {
 	case string:
-		return v
+		*urls = append(*urls, v)
 	case map[string]interface{}:
-		return strVal(v, "url")
+		if u := strVal(v, "url"); u != "" {
+			*urls = append(*urls, u)
+		}
+		if u := strVal(v, "contentUrl"); u != "" {
+			*urls = append(*urls, u)
+		}
 	case []interface{}:
-		if len(v) > 0 {
-			switch first := v[0].(type) {
-			case string:
-				return first
-			case map[string]interface{}:
-				return strVal(first, "url")
+		for _, item := range v {
+			collectImageURLs(item, urls)
+		}
+	}
+}
+
+func pickBestImage(urls []string) string {
+	if len(urls) == 0 {
+		return ""
+	}
+	// Prefer URLs that don't look like thumbnails
+	for _, u := range urls {
+		if !looksSmall(u) {
+			return u
+		}
+	}
+	return urls[0]
+}
+
+var smallImageRe = regexp.MustCompile(`[-_]sm\b|[-_]thumb(?:nail)?\b|[-_]small\b|[-_]\d{2,3}x\d{2,3}\b|[-_]\d{2,3}w\b`)
+
+func looksSmall(u string) bool {
+	return smallImageRe.MatchString(u)
+}
+
+func findMetaImage(n *html.Node) string {
+	var result string
+	var f func(*html.Node)
+	f = func(n *html.Node) {
+		if n.Type == html.ElementNode && n.Data == "meta" {
+			prop := ""
+			content := ""
+			for _, a := range n.Attr {
+				if a.Key == "property" {
+					prop = a.Val
+				}
+				if a.Key == "content" {
+					content = a.Val
+				}
+			}
+			if prop == "og:image" && content != "" {
+				result = content
+				return
+			}
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			f(c)
+			if result != "" {
+				return
 			}
 		}
 	}
-	return ""
+	f(n)
+	return result
 }
 
 func extractIngredients(m map[string]interface{}) []models.Ingredient {
