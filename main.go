@@ -57,6 +57,7 @@ func main() {
 		"groupIngredients": groupIngredients,
 		"json":        func(v string) string { b, _ := json.Marshal(v); return string(b) },
 		"trimProto":   func(s string) string { return strings.TrimPrefix(strings.TrimPrefix(s, "https://"), "http://") },
+		"shortHash":   func(s string) string { if len(s) > 7 { return s[:7] }; return s },
 	}).ParseFS(ui.Templates, "templates/*.html")
 	if err != nil {
 		log.Fatalf("parsing templates: %v", err)
