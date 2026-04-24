@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"html"
+	"time"
+)
 
 type Recipe struct {
 	Name         string
@@ -36,4 +39,17 @@ type CachedRecipe struct {
 	Recipe     []byte
 	ExtractionMethod string
 	FetchedAt  time.Time
+}
+
+func (r *Recipe) Normalize() {
+	r.Name = html.UnescapeString(r.Name)
+	r.Description = html.UnescapeString(r.Description)
+	for i := range r.Ingredients {
+		r.Ingredients[i].RawText = html.UnescapeString(r.Ingredients[i].RawText)
+		r.Ingredients[i].Name = html.UnescapeString(r.Ingredients[i].Name)
+		r.Ingredients[i].Group = html.UnescapeString(r.Ingredients[i].Group)
+	}
+	for i := range r.Instructions {
+		r.Instructions[i].Text = html.UnescapeString(r.Instructions[i].Text)
+	}
 }

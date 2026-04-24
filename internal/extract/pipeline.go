@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"tangled.org/dunkirk.sh/pear/internal/extract/generic"
 	"tangled.org/dunkirk.sh/pear/internal/extract/hrecipe"
 	"tangled.org/dunkirk.sh/pear/internal/extract/marmiton"
 	"tangled.org/dunkirk.sh/pear/internal/extract/schema"
@@ -64,39 +65,60 @@ func (p *Pipeline) Extract(targetURL string) *Result {
 
 	lang := detectLanguage(body)
 
-	if recipe, ok := marmiton.Extract(body); ok {
-		recipe.SourceURL = targetURL
-		recipe.SourceDomain = domainOf(targetURL)
-		recipe.Language = lang
-		return &Result{Recipe: recipe}
+	type candidate struct {
+		recipe *models.Recipe
+		method string
+	}
+	var fallbacks []candidate
+
+	tryExtract := func(r *models.Recipe, ok bool, method string) *Result {
+		if !ok || r == nil {
+			return nil
+		}
+		r.SourceURL = targetURL
+		r.SourceDomain = domainOf(targetURL)
+		r.Language = lang
+		r.Normalize()
+		if len(r.Instructions) > 0 {
+			return &Result{Recipe: r}
+		}
+		fallbacks = append(fallbacks, candidate{r, method})
+		return nil
 	}
 
-	if recipe, ok := wprm.Extract(body); ok {
-		recipe.SourceURL = targetURL
-		recipe.SourceDomain = domainOf(targetURL)
-		recipe.Language = lang
-		return &Result{Recipe: recipe}
+	if r, ok := marmiton.Extract(body); true {
+		if result := tryExtract(r, ok, "marmiton"); result != nil {
+			return result
+		}
+	}
+	if r, ok := wprm.Extract(body); true {
+		if result := tryExtract(r, ok, "wprm"); result != nil {
+			return result
+		}
+	}
+	if r, ok := schema.Extract(body); true {
+		if result := tryExtract(r, ok, "schema.org"); result != nil {
+			return result
+		}
+	}
+	if r, ok := schema.ExtractMicrodata(body); true {
+		if result := tryExtract(r, ok, "microdata"); result != nil {
+			return result
+		}
+	}
+	if r, ok := hrecipe.Extract(body); true {
+		if result := tryExtract(r, ok, "h-recipe"); result != nil {
+			return result
+		}
+	}
+	if r, ok := generic.Extract(body); true {
+		if result := tryExtract(r, ok, "generic"); result != nil {
+			return result
+		}
 	}
 
-	if recipe, ok := schema.Extract(body); ok {
-		recipe.SourceURL = targetURL
-		recipe.SourceDomain = domainOf(targetURL)
-		recipe.Language = lang
-		return &Result{Recipe: recipe}
-	}
-
-	if recipe, ok := schema.ExtractMicrodata(body); ok {
-		recipe.SourceURL = targetURL
-		recipe.SourceDomain = domainOf(targetURL)
-		recipe.Language = lang
-		return &Result{Recipe: recipe}
-	}
-
-	if recipe, ok := hrecipe.Extract(body); ok {
-		recipe.SourceURL = targetURL
-		recipe.SourceDomain = domainOf(targetURL)
-		recipe.Language = lang
-		return &Result{Recipe: recipe}
+	if len(fallbacks) > 0 {
+		return &Result{Recipe: fallbacks[0].recipe}
 	}
 
 	return &Result{Error: fmt.Errorf("no recipe found on page - tried JSON-LD, microdata, and h-recipe extraction")}
