@@ -1,6 +1,6 @@
 module tangled.org/dunkirk.sh/pear
 
-go 1.26.2
+go 1.26
 
 require (
 	github.com/aquilax/cooklang-go v0.2.0
