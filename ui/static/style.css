@@ -80,8 +80,10 @@ footer a:hover{color:var(--accent)}
   letter-spacing:-0.03125em;
   font-weight:700;
 }
-.hero{text-align:center;padding:4rem 0 2.5rem}
-.hero p{color:var(--text-muted);font-size:1.05rem;margin-bottom:2rem}
+.hero{text-align:center;padding:2.5rem 0 1rem}
+.hero p{color:var(--text-muted);font-size:1.05rem;margin-bottom:0.5rem}
+.userscript-hint{color:var(--text-muted);font-size:0.85rem;margin-top:0.5rem;font-family:'Poppins',system-ui,sans-serif}
+.userscript-hint a{color:var(--accent)}
 
 .search-form{}
 .search-form form{display:flex;gap:0.5rem}
@@ -485,7 +487,7 @@ footer a:hover{color:var(--accent)}
 .cook-code .ck-qty{color:#b5cea8}
 .cook-code .ck-unit{color:#ce9178}
 
-.recent-recipes{margin-top:3rem}
+.recent-recipes{margin-top:1.5rem}
 .recent-recipes h3{
   font-size:0.85rem;
   text-transform:uppercase;
