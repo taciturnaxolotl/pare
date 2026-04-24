@@ -1,5 +1,7 @@
 # pear
 
+![screenshot](https://l4.dunkirk.sh/i/9RFw5DpISXrO.webp)
+
 making recipe websites palatable again
 
 The canonical repo for this is hosted on tangled over at [`dunkirk.sh/pear`](https://tangled.org/dunkirk.sh/pear)
