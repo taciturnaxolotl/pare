@@ -371,22 +371,21 @@ func ParseIngredient(text string) models.Ingredient {
 
 func parseIngredient(text string) models.Ingredient {
 	text = strings.TrimSpace(text)
-	text = prettifyQuantities(text)
 
 	if m := ingredientRangeRe.FindStringSubmatch(text); len(m) == 4 {
-		return models.Ingredient{RawText: text, Quantity: m[1], Unit: m[2], Name: m[3]}
+		return models.Ingredient{RawText: prettifyQuantities(text), Quantity: m[1], Unit: m[2], Name: m[3]}
 	}
 	if m := ingredientFracAdjUnitRe.FindStringSubmatch(text); len(m) == 5 {
 		name := strings.TrimSpace(m[2]) + " " + m[4]
-		return models.Ingredient{RawText: text, Quantity: m[1], Unit: m[3], Name: name}
+		return models.Ingredient{RawText: prettifyQuantities(text), Quantity: m[1], Unit: m[3], Name: name}
 	}
 	if m := ingredientFracRe.FindStringSubmatch(text); len(m) == 4 {
-		return models.Ingredient{RawText: text, Quantity: m[1], Unit: m[2], Name: m[3]}
+		return models.Ingredient{RawText: prettifyQuantities(text), Quantity: m[1], Unit: m[2], Name: m[3]}
 	}
 	if m := ingredientNoUnitRe.FindStringSubmatch(text); len(m) == 3 {
-		return models.Ingredient{RawText: text, Quantity: m[1], Name: m[2]}
+		return models.Ingredient{RawText: prettifyQuantities(text), Quantity: m[1], Name: m[2]}
 	}
-	return models.Ingredient{RawText: text}
+	return models.Ingredient{RawText: prettifyQuantities(text)}
 }
 
 var decimalRe = regexp.MustCompile(`\b(\d+\.\d+)\b`)
